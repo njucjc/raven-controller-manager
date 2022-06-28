@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/go-logr/logr v1.2.0
+	github.com/kirito41dd/xslice v0.0.1
 	github.com/projectcalico/api v0.0.0-20220505235232-ce7a5122e146
 	github.com/stretchr/testify v1.7.3
 	k8s.io/api v0.23.2
