@@ -48,10 +48,10 @@ var (
 func TestGatewayReconciler_electActiveEndpoint(t *testing.T) {
 	mockReconciler := &GatewayReconciler{}
 	var tt = []struct {
-		name       string
-		nodeList   corev1.NodeList
-		gw         *ravenv1alpha1.Gateway
-		expectedEp *ravenv1alpha1.Endpoint
+		name                    string
+		nodeList                corev1.NodeList
+		gw                      *ravenv1alpha1.Gateway
+		expectedActiveEndpoints []*ravenv1alpha1.ActiveEndpoint
 	}{
 		{
 			// The node hosting active endpoint becomes NotReady, and it is the only node in the Gateway,
@@ -72,19 +72,26 @@ func TestGatewayReconciler_electActiveEndpoint(t *testing.T) {
 					Name: "gateway-1",
 				},
 				Spec: ravenv1alpha1.GatewaySpec{
+					Replicas: func(i int) *int { return &i }(1),
 					Endpoints: []ravenv1alpha1.Endpoint{
 						{
 							NodeName: "node-1",
+							Healthy:  true,
 						},
 					},
 				},
 				Status: ravenv1alpha1.GatewayStatus{
-					ActiveEndpoint: &ravenv1alpha1.Endpoint{
-						NodeName: "node-1",
+					ActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{
+						{
+							Endpoint: &ravenv1alpha1.Endpoint{
+								NodeName: "node-1",
+								Healthy:  true,
+							},
+						},
 					},
 				},
 			},
-			expectedEp: nil,
+			expectedActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{},
 		},
 		{
 			// The node hosting active endpoint becomes NotReady, but there are at least one Ready node,
@@ -110,23 +117,36 @@ func TestGatewayReconciler_electActiveEndpoint(t *testing.T) {
 					Name: "gateway-1",
 				},
 				Spec: ravenv1alpha1.GatewaySpec{
+					Replicas: func(i int) *int { return &i }(1),
 					Endpoints: []ravenv1alpha1.Endpoint{
 						{
 							NodeName: "node-1",
+							Healthy:  true,
 						},
 						{
 							NodeName: "node-2",
+							Healthy:  true,
 						},
 					},
 				},
 				Status: ravenv1alpha1.GatewayStatus{
-					ActiveEndpoint: &ravenv1alpha1.Endpoint{
-						NodeName: "node-1",
+					ActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{
+						{
+							Endpoint: &ravenv1alpha1.Endpoint{
+								NodeName: "node-1",
+								Healthy:  true,
+							},
+						},
 					},
 				},
 			},
-			expectedEp: &ravenv1alpha1.Endpoint{
-				NodeName: "node-2",
+			expectedActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{
+				{
+					Endpoint: &ravenv1alpha1.Endpoint{
+						NodeName: "node-2",
+						Healthy:  true,
+					},
+				},
 			},
 		},
 		{
@@ -152,23 +172,36 @@ func TestGatewayReconciler_electActiveEndpoint(t *testing.T) {
 					Name: "gateway-1",
 				},
 				Spec: ravenv1alpha1.GatewaySpec{
+					Replicas: func(i int) *int { return &i }(1),
 					Endpoints: []ravenv1alpha1.Endpoint{
 						{
 							NodeName: "node-1",
+							Healthy:  true,
 						},
 						{
 							NodeName: "node-2",
+							Healthy:  true,
 						},
 					},
 				},
 				Status: ravenv1alpha1.GatewayStatus{
-					ActiveEndpoint: &ravenv1alpha1.Endpoint{
-						NodeName: "node-1",
+					ActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{
+						{
+							Endpoint: &ravenv1alpha1.Endpoint{
+								NodeName: "node-1",
+								Healthy:  true,
+							},
+						},
 					},
 				},
 			},
-			expectedEp: &ravenv1alpha1.Endpoint{
-				NodeName: "node-2",
+			expectedActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{
+				{
+					Endpoint: &ravenv1alpha1.Endpoint{
+						NodeName: "node-2",
+						Healthy:  true,
+					},
+				},
 			},
 		},
 		{
@@ -193,20 +226,23 @@ func TestGatewayReconciler_electActiveEndpoint(t *testing.T) {
 					Name: "gateway-1",
 				},
 				Spec: ravenv1alpha1.GatewaySpec{
+					Replicas: func(i int) *int { return &i }(1),
 					Endpoints: []ravenv1alpha1.Endpoint{
 						{
 							NodeName: "node-1",
+							Healthy:  true,
 						},
 						{
 							NodeName: "node-2",
+							Healthy:  true,
 						},
 					},
 				},
 				Status: ravenv1alpha1.GatewayStatus{
-					ActiveEndpoint: nil,
+					ActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{},
 				},
 			},
-			expectedEp: nil,
+			expectedActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{},
 		},
 		{
 			// The node hosting the active endpoint is still ready, do not change it.
@@ -231,31 +267,44 @@ func TestGatewayReconciler_electActiveEndpoint(t *testing.T) {
 					Name: "gateway-1",
 				},
 				Spec: ravenv1alpha1.GatewaySpec{
+					Replicas: func(i int) *int { return &i }(1),
 					Endpoints: []ravenv1alpha1.Endpoint{
 						{
 							NodeName: "node-1",
+							Healthy:  true,
 						},
 						{
 							NodeName: "node-2",
+							Healthy:  true,
 						},
 					},
 				},
 				Status: ravenv1alpha1.GatewayStatus{
-					ActiveEndpoint: &ravenv1alpha1.Endpoint{
-						NodeName: "node-2",
+					ActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{
+						{
+							Endpoint: &ravenv1alpha1.Endpoint{
+								NodeName: "node-2",
+								Healthy:  true,
+							},
+						},
 					},
 				},
 			},
-			expectedEp: &ravenv1alpha1.Endpoint{
-				NodeName: "node-2",
+			expectedActiveEndpoints: []*ravenv1alpha1.ActiveEndpoint{
+				{
+					Endpoint: &ravenv1alpha1.Endpoint{
+						NodeName: "node-2",
+						Healthy:  true,
+					},
+				},
 			},
 		},
 	}
 	for _, v := range tt {
 		t.Run(v.name, func(t *testing.T) {
 			a := assert.New(t)
-			ep := mockReconciler.electActiveEndpoint(v.nodeList, v.gw)
-			a.Equal(v.expectedEp, ep)
+			ep := mockReconciler.electActiveEndpoints(v.nodeList, v.gw)
+			a.Equal(v.expectedActiveEndpoints, ep)
 		})
 	}
 
